@@ -53,9 +53,9 @@ use core::hash::Hasher;
 /// Provides a default [Hasher] compile time generated constants for keys.
 /// This is typically used in conjunction with [BuildHasherDefault] to create
 /// [AHasher]s in order to hash the keys of the map.
-/// 
+///
 /// Generally it is preferable to use [RandomState] instead, so that different
-/// hashmaps will have different keys. However if fixed keys are desireable this 
+/// hashmaps will have different keys. However if fixed keys are desireable this
 /// may be used instead.
 ///
 /// # Example
@@ -73,7 +73,7 @@ use core::hash::Hasher;
 /// [HashMap]: std::collections::HashMap
 impl Default for AHasher {
 
-    /// Constructs a new [AHasher] with compile time generated constants for keys if the 
+    /// Constructs a new [AHasher] with compile time generated constants for keys if the
     /// `compile-time-rng`feature is enabled. Otherwise the keys will be fixed constants.
     /// This means the keys will be the same from one instance to another,
     /// but different from build to the next. So if it is possible for a potential
@@ -99,8 +99,8 @@ impl Default for AHasher {
     fn default() -> AHasher {
         AHasher::new_with_keys(const_random!(u128), const_random!(u128))
     }
-    
-    /// Constructs a new [AHasher] with compile time generated constants for keys if the 
+
+    /// Constructs a new [AHasher] with compile time generated constants for keys if the
     /// `compile-time-rng`feature is enabled. Otherwise the keys will be fixed constants.
     /// This means the keys will be the same from one instance to another,
     /// but different from build to the next. So if it is possible for a potential
