@@ -174,6 +174,7 @@ mod test {
     use crate::convert::Convert;
     use crate::*;
     use std::collections::HashMap;
+    use std::hash::BuildHasher;
 
     #[cfg(feature = "std")]
     #[test]
@@ -199,5 +200,55 @@ mod test {
     #[test]
     fn test_ahasher_construction() {
         let _ = AHasher::new_with_keys(1234, 5678);
+    }
+
+    #[test]
+    fn test_same_when_direct_vs_wrapped_ahasher() {
+        hasher_same_when_wrapped(random_state::RandomState::default());
+    }
+
+    #[test]
+    fn test_same_when_direct_vs_wrapped_default_hasher() {
+        hasher_same_when_wrapped(std::collections::hash_map::RandomState::default());
+    }
+
+    // A test that the same data with the same factory produces the same hash value
+    // even when the hasher is wrapped in a newtype
+    fn hasher_same_when_wrapped<F: BuildHasher>(factory: F) {
+        use std::hash::Hash;
+        let test_data = "hello world".to_string();
+
+        // First get the hash.  We always expect the same value for a given piece of
+        // data and factory (only the factories address can make a difference and its
+        // the same for this entire test)
+        let exemplar = {
+            let mut hasher = factory.build_hasher();
+            test_data.hash(&mut hasher);
+            hasher.finish()
+        };
+
+        // Check the normal case is stable
+        {
+            let mut hasher = factory.build_hasher();
+            test_data.hash(&mut hasher);
+            assert_eq!(exemplar, hasher.finish());
+        }
+
+        // Now check when hasher is inside a newtype. Not expecting the move of the hasher
+        // inside the newtype or its extra stack frame to make a difference.
+        {
+            struct NewTypeHasher<H: Hasher>(H);
+            impl<H: Hasher> Hasher for NewTypeHasher<H> {
+                fn write(&mut self, bytes: &[u8]) {
+                    self.0.write(bytes)
+                }
+                fn finish(&self) -> u64 {
+                    self.0.finish()
+                }
+            }
+            let mut hasher = NewTypeHasher(factory.build_hasher());
+            test_data.hash(&mut hasher);
+            assert_eq!(exemplar, hasher.finish());
+        }
     }
 }
